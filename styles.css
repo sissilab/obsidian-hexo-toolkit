@@ -1,8 +1,117 @@
-/*
+.image-service-group {
+    margin-bottom: 1em;
+    border: 1px dashed var(--background-modifier-border);
+    border-radius: 4px;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.image-service-group:hover {
+    border: 1px solid var(--background-modifier-border-hover);
+}
 
-If your plugin does not need CSS, delete this file.
+.image-service-group details>summary {
+    padding: 3px;
+    background-color: var(--background-secondary);
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
 
-*/
+.image-service-group details>summary::-webkit-details-marker {
+    display: none;
+}
+
+.image-service-group .collapse-icon {
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.image-service-group details>summary .collapse-icon::before {
+    content: '▸';
+    color: var(--text-muted);
+}
+
+.image-service-group details[open]>summary .collapse-icon::before {
+    content: '▾';
+}
+
+.image-service-group .summary-text {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.image-service-group .remove-service-btn:hover {
+    background-color: var(--background-modifier-error-hover);
+}
+
+.image-service-group .move-up-btn,
+.image-service-group .move-down-btn,
+.image-service-group .remove-service-btn {
+    width: 35px;
+    margin-right: 3px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.image-service-group .service-details {
+    padding: 0 8px;
+    font-size: 0.6em;
+}
+
+.image-service-group .setting-item:first-child {
+    padding-top: 0.75em;
+}
+
+/* .modal-conversion-state {
+    width: 600px;
+    height: 400px;
+} */
+
+.modal-conversion-state .mcs-item .mcs-item-key {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #7a7978;
+}
+
+.modal-conversion-state .mcs-item .mcs-item-val {
+    font-size: 0.8em;
+}
+
+.modal-conversion-state .mcs-item .mcs-item-val li {
+    white-space: nowrap;
+    padding: 2px 0;
+}
+
+.modal-conversion-state code {
+    color: var(--code-normal);
+    font-family: var(--font-monospace);
+    background-color: var(--code-background);
+    border-radius: var(--code-radius);
+    font-size: var(--code-size);
+    padding: 0.1em 0.25em;
+    -webkit-box-decoration-break: clone;
+}
+
+.modal-conversion-state .mcs-item button {
+    font-size: 0.8em;
+    height: auto;
+    padding: 2px;
+    margin-right: 2px;
+    vertical-align: middle;
+}
+
+.modal-conversion-state .mcs-item .mcs-item-val .error-tip {
+    color: red;
+}
+
+.modal-conversion-state .mcs-item .mcs-item-val .converted-content-text {
+    width: -webkit-fill-available;
+    height: 200px;
+}
+
+.hexo-plugin-setting .hexo-front-matter input {
+    width: 250px;
+}
