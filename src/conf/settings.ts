@@ -1,6 +1,7 @@
 import { PluginSettingTab, App, Setting } from "obsidian";
 import { ImageServiceTypeEnum, ImageServiceConfig } from "src/image/imageModel";
 import HexoPlugin from "src/main";
+import { t } from "src/lang/helper";
 
 export interface HexoPluginSettings {
     hexoFrontMatterProperties: string;
@@ -9,7 +10,7 @@ export interface HexoPluginSettings {
 
 export const DEFAULT_SETTINGS: HexoPluginSettings = {
     hexoFrontMatterProperties: 'title,date,updated,tags,categories',
-    imageServiceConfigs: [],
+    imageServiceConfigs: [{ type: ImageServiceTypeEnum.Local, name: '' }],
 }
 
 export class HexoPluginSettingTab extends PluginSettingTab {
@@ -118,7 +119,8 @@ export class HexoPluginSettingTab extends PluginSettingTab {
             .setName('Type')
             .addDropdown(dropdown => {
                 for (const key in ImageServiceTypeEnum) {
-                    dropdown.addOption(key, key);
+                    // @ts-ignore
+                    dropdown.addOption(key, t(key));
                 }
                 dropdown.setValue(service.type || '');
                 dropdown.onChange(async (value) => {

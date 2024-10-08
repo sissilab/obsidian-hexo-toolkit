@@ -8,7 +8,6 @@ export interface ImageServiceConfig {
 
 export enum ImageServiceTypeEnum {
     Local = 'Local',
-    // https://doc.sm.ms/
-    Smms = 'Smms',
+    Smms = 'Smms', // https://doc.sm.ms/
     // Imgur = 'Imgur',
 }
