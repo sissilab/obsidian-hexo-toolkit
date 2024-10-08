@@ -1,8 +1,9 @@
 import { Notice, TFile } from "obsidian";
-import { ImageBaseService, ImageServiceFactory } from "src/image/imageService";
+import { ImageBaseService, ImageServiceFactory } from "src/imageService/imageService";
 import HexoPlugin from "src/main";
 import { ConversionState } from "./conversionState";
 import { ConversionStateModal } from "src/ui/modal/conversionStateModal";
+import { ImageUtil } from "src/util/imageUil";
 
 export class Convertor {
 
@@ -145,6 +146,7 @@ export class Convertor {
                             imageMatch.file = imageFile;
                             // @ts-ignore
                             imageMatch.fullPath = this.plugin.app.vault.adapter.getFullPath(imageFile.path);
+                            imageMatch.mimeType = ImageUtil.getImageContentType(imageFile.extension);
                             if (!imageService) {
                                 continue;
                             }
@@ -153,7 +155,7 @@ export class Convertor {
                             if (serviceHandleResult.replacedText) {
                                 text = text.replace(imageMatch.matchedText, serviceHandleResult.replacedText);
                             }
-                        } else { // may be Excalidraw file
+                        } else { // may be Excalidraw file -> convert to svg
                             if (this.isExcalidraw(imageFile)) {
                                 const svgElement = await this.exportExcalidraw(imageFile);
                                 if (svgElement) {
@@ -168,7 +170,7 @@ export class Convertor {
                                     }
                                     svgContainerEl.appendChild(svgElement);
                                     imageMatch.replacedText = svgContainerEl.outerHTML
-                                        .replace(/>\s+</g, '><')
+                                        .replace(/\s*(>)\s*(<)\s*/g, '$1$2')
                                         .replace(/\s{2,}/g, ' ')
                                         .trim();
                                     text = text.replace(imageMatch.matchedText, imageMatch.replacedText);
@@ -293,6 +295,8 @@ export class Convertor {
         }
     }
 
+    // ![]()
+    // e.g. ![image alt](image.png), ![image alt|30](image.png)
     private handleMarkdownMatch(lineText: string, imageMatches: ImageMatch[]): void {
         const matchFormat = ImageMatchFormat.Markdown;
         let match: RegExpExecArray | null;
@@ -310,7 +314,7 @@ export class Convertor {
             }
             if (altText) {
                 const altIdx = altText.lastIndexOf('|');
-                const altTextTail = (0 > altIdx ? altText : altText.substring(altIdx)).trim();
+                const altTextTail = (0 > altIdx ? altText : altText.substring(altIdx + 1)).trim();
                 if (altTextTail) {
                     if (Convertor.IMAGE_WIDTH_REGEX.test(altTextTail)) { // width
                         width = Number(altTextTail);
@@ -391,6 +395,7 @@ export interface ImageMatch {
     width: number,
     height: number,
     file?: TFile,
+    mimeType?: string,
     fullPath?: string,
     replacedText?: string
 }

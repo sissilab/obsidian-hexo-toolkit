@@ -86,10 +86,10 @@ export class ConversionState {
             if (im.file && im.fullPath) {
                 const fullPath = im.fullPath;
                 const fileName = im.file.name;
+                const mimeType = im.mimeType;
                 const copyImageFileBtn = createEl('button', { cls: 'copy-image-file-btn', title: 'copy image file' });
-                copyImageFileBtn.innerHTML = `<svg t="1727939033220" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1462" width="13" height="13"><path d="M682.666667 42.666667H85.333333v682.666666h85.333334V128h512V42.666667zM256 213.333333l4.522667 768H896V213.333333H256z m554.666667 682.666667H341.333333V298.666667h469.333334v597.333333z" fill="#525A65" p-id="1463"></path></svg>`;
                 copyImageFileBtn.addEventListener('click', () => {
-                    ImageUtil.copyFileBySystemCommand(fullPath, fileName);
+                    ImageUtil.copyFileBySystemCommand(fullPath, fileName, mimeType);
                 });
                 li.appendChild(copyImageFileBtn);
             }
@@ -161,12 +161,8 @@ export class ConversionState {
     }
 
     public getConvertedContentUlElement(): HTMLUListElement {
-        const ul = createEl('ul');
-        ul.style.listStyleType = 'none';
-        ul.style.paddingLeft = '10px';
-        const li = createEl('li');
-        li.appendChild(createEl('textarea', { cls: 'converted-content-text', text: this.convertedContent }));
-        ul.appendChild(li);
+        const ul = createEl('ul', { cls: 'converted-content-container' });
+        ul.createEl('li').createEl('textarea', { cls: 'converted-content-text', text: this.convertedContent });
         return ul;
     }
 

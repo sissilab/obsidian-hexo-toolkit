@@ -1,5 +1,5 @@
 import { PluginSettingTab, App, Setting } from "obsidian";
-import { ImageServiceTypeEnum, ImageServiceConfig } from "src/image/imageModel";
+import { ImageServiceTypeEnum, ImageServiceConfig } from "src/imageService/imageModel";
 import HexoPlugin from "src/main";
 import { t } from "src/lang/helper";
 
@@ -26,7 +26,7 @@ export class HexoPluginSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.addClass('hexo-plugin-setting');
+        containerEl.addClass('hexo-toolkit-setting');
 
         containerEl.createEl('h2', { text: 'Hexo Toolkit v' + this.plugin.manifest.version });
 

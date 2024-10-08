@@ -3,7 +3,6 @@ import HexoPlugin from "src/main";
 import { ImageServiceConfig, ImageServiceTypeEnum } from "./imageModel";
 import { ImageMatch, ImageMatchFormat } from "src/conversion/convertor";
 
-
 export class ImageServiceFactory {
 
     public static getImageService(serviceConfigName: string, plugin: HexoPlugin): ImageBaseService | null {
@@ -63,27 +62,6 @@ export abstract class ImageBaseService {
         return imageMatch.replacedText;
     }
 
-    protected getImageContentType(fileExtension: string): string {
-        const extension = fileExtension?.toLowerCase();
-        switch (extension) {
-            case 'jpg':
-            case 'jpeg':
-                return 'image/jpeg';
-            case 'png':
-                return 'image/png';
-            case 'gif':
-                return 'image/gif';
-            case 'bmp':
-                return 'image/bmp';
-            case 'svg':
-                return 'image/svg+xml';
-            case 'webp':
-                return 'image/webp';
-            default:
-                return 'image/png'; // 未支持的文件类型
-        }
-    }
-
     protected addErrorMessages(msg: string) {
         if (!this.errorMessages) {
             this.errorMessages = [];
@@ -104,7 +82,7 @@ export class LocalImageService extends ImageBaseService {
             return { replacedText: imageMatch.matchedText, errorMessages: ['Wrong image file for ' + imageMatch.matchedText] };
         }
         const filename = imageFile.name
-        if (ImageMatchFormat.Wikilink !== imageMatch.matchFormat) {
+        if (ImageMatchFormat.Wikilink !== imageMatch.matchFormat && ImageMatchFormat.Markdown !== imageMatch.matchFormat) {
             imageMatch.replacedText = imageMatch.matchedText;
             return { replacedText: null, errorMessages: this.errorMessages };
         }
@@ -134,7 +112,7 @@ export class Smms extends ImageBaseService {
             return { replacedText: this.combineImageHtml(imageUrl, imageMatch), errorMessages: this.errorMessages };
         }
         // Found no image on SM.MS -> call upload api
-        const res = await this.upload(imageFile, filename);
+        const res = await this.upload(imageFile, filename, imageMatch.mimeType);
         if (res) {
             if (res.success) {
                 return { replacedText: this.combineImageHtml(res.data.url, imageMatch), errorMessages: this.errorMessages };
@@ -190,9 +168,11 @@ export class Smms extends ImageBaseService {
         return null;
     }
 
-    private async upload(imageFile: TFile, filename: string) {
+    private async upload(imageFile: TFile, filename: string, contentType?: string) {
         const url = this.baseApiUrl + 'upload';
-        const contentType = this.getImageContentType(imageFile.extension);
+        if (!contentType) {
+            contentType = 'image/png';
+        }
         const imageBuffer = await this.plugin.app.vault.readBinary(imageFile);
         const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
         // ------WebKitFormBoundaryPkpFF7tjBAqx29L\r\n
