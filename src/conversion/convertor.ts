@@ -60,7 +60,7 @@ export class Convertor {
     private static readonly HEXO_IMAGE_SERVICE_KEY = 'hexo-image-service';
 
     private static readonly INLINE_CODE_BLOCK_REGEX = /`([^ `]+)`/g;
-    private static readonly WIKILINK_EMBED_REGEX = /!\[\[(.*?)\]\]/g; // `![[]]`
+    private static readonly WIKILINK_REGEX = /(!?)\[\[(.*?)\]\]/g; // `![[]]`, `[[]]`
     private static readonly MARKDOWN_EMBED_REGEX = /!\[(.*?)\]\((.*?)\)/g; // `![]()`
     private static readonly HTTP_START_REGEX = /^(https?:\/\/)/i; // start with `http://` or `https://`
     private static readonly IMAGE_FORMAT_REGEX = /\.(jpe?g|png|gif|bmp|svg|webp|avif)$/i; // end with `.jpg` or `.jpeg` or `.png` or ...
@@ -111,15 +111,15 @@ export class Convertor {
                     continue;
                 }
 
-                // Obsidian link to a heading within the same note `[[#1. xxx]]` -> Hexo `[1. xxx](#1-xxx)`
-                text = text.replace(/\[\[#(.*?)\]\]/g, (matchedText, capturedText) => {
+                // Obsidian link to 1a heading within the same note `[[#1. xxx]]` -> Hexo `[1. xxx](#1-xxx)`
+                /* text = text.replace(/\[\[#(.*?)\]\]/g, (matchedText, capturedText) => {
                     return `[${capturedText}](#${capturedText.trim().replace(/[^a-zA-Z0-9]+/g, '-').replace(/-$/, '')})`;
-                });
+                }); */
 
-                const imageMatches: ImageMatch[] = [];
-                this.handleWikilinkMatch(text, imageMatches); // ![[]]
-                this.handleMarkdownMatch(text, imageMatches); // ![]()
-                if (0 < imageMatches.length) {
+                const linkMatches: LinkMatch[] = [];
+                this.handleWikilinkMatch(text, linkMatches); // `![[]]`, `[[]]`
+                this.handleMarkdownMatch(text, linkMatches); // `![]()`
+                if (0 < linkMatches.length) {
                     if (undefined === imageService) {
                         imageService = ImageServiceFactory.getImageService(propertiesState.imageServiceConfigName, this.plugin);
                         if (imageService) {
@@ -129,54 +129,95 @@ export class Convertor {
                             this.conversionState.addErrorMessages('Found no available Image Service');
                         }
                     }
-                    for (const imageMatch of imageMatches) {
-                        if (Convertor.HTTP_START_REGEX.test(imageMatch.src)) {
+                    for (const lm of linkMatches) {
+                        this.conversionState.addLinkMatch(lm);
+                        if (LinkMatchStatus.Valid !== lm.status) {
                             continue;
                         }
-                        if (!imageMatch.alt) {
-                            imageMatch.alt = imageMatch.src;
-                        }
-                        this.conversionState.addImageMatch(imageMatch);
-                        const imageFile = this.plugin.app.metadataCache.getFirstLinkpathDest(decodeURIComponent(imageMatch.src), sourceFilePath);
-                        if (!imageFile) {
-                            this.conversionState.addErrorMessages('Found no image file: ' + imageMatch.matchedText);
+                        if (Convertor.HTTP_START_REGEX.test(lm.src)) {
+                            lm.status = LinkMatchStatus.Unmatched;
                             continue;
                         }
-                        if (Convertor.IMAGE_FORMAT_REGEX.test(imageMatch.src)) { // local image
-                            imageMatch.file = imageFile;
-                            // @ts-ignore
-                            imageMatch.fullPath = this.plugin.app.vault.adapter.getFullPath(imageFile.path);
-                            imageMatch.mimeType = ImageUtil.getImageContentType(imageFile.extension);
-                            if (!imageService) {
+                        if (!lm.alt) {
+                            lm.alt = lm.src;
+                        }
+                        switch (lm.linkType) {
+                            case LinkType.LinkingInternalHeading: {
+                                if (lm.src) {
+                                    // Obsidian link to a heading within the same note `[[#1. xxx]]` -> Hexo `[1. xxx](#1-xxx)`
+                                    lm.replacedText = `[${lm.alt}](#${lm.src.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-$/, '')})`;
+                                    text = text.replace(lm.matchedText, lm.replacedText);
+                                }
                                 continue;
                             }
-                            const serviceHandleResult = await imageService.handle(imageMatch);
-                            serviceHandleResult.errorMessages.forEach(msg => this.conversionState.addErrorMessages(msg));
-                            if (serviceHandleResult.replacedText) {
-                                text = text.replace(imageMatch.matchedText, serviceHandleResult.replacedText);
-                            }
-                        } else { // may be Excalidraw file -> convert to svg
-                            if (this.isExcalidraw(imageFile)) {
-                                const svgElement = await this.exportExcalidraw(imageFile);
-                                if (svgElement) {
-                                    svgElement.removeAttribute('width');
-                                    svgElement.removeAttribute('height');
-                                    const svgContainerEl = createDiv('excalidraw-svg');
-                                    if (imageMatch.width && 0 < imageMatch.width) {
-                                        svgContainerEl.style.maxWidth = imageMatch.width + '';
+                            case LinkType.LinkFile: {
+                                const linkFile = this.plugin.app.metadataCache.getFirstLinkpathDest(decodeURIComponent(lm.src), sourceFilePath);
+                                if (linkFile) {
+                                    lm.file = linkFile;
+                                    const metadataProps = this.plugin.app.metadataCache.getFileCache(linkFile)?.frontmatter;
+                                    if (metadataProps) {
+                                        const hexoPath = metadataProps['hexo-path'];
+                                        if (hexoPath) {
+                                            lm.replacedText = `[${lm.alt}](${hexoPath})`;
+                                            text = text.replace(lm.matchedText, lm.replacedText);
+                                            continue;
+                                        }
                                     }
-                                    if (imageMatch.height && 0 < imageMatch.height) {
-                                        svgContainerEl.style.maxHeight = imageMatch.height + '';
-                                    }
-                                    svgContainerEl.appendChild(svgElement);
-                                    imageMatch.replacedText = svgContainerEl.outerHTML
-                                        .replace(/\s*(>)\s*(<)\s*/g, '$1$2')
-                                        .replace(/\s{2,}/g, ' ')
-                                        .trim();
-                                    text = text.replace(imageMatch.matchedText, imageMatch.replacedText);
+                                } else {
+                                    this.conversionState.addErrorMessages('Found no link file: ' + lm.matchedText);
                                 }
+                                break;
                             }
+                            case LinkType.EmbedFile: {
+                                const linkFile = this.plugin.app.metadataCache.getFirstLinkpathDest(decodeURIComponent(lm.src), sourceFilePath);
+                                if (linkFile) {
+                                    lm.file = linkFile;
+                                    if (Convertor.IMAGE_FORMAT_REGEX.test(lm.src)) { // local image
+                                        // @ts-ignore
+                                        lm.fullPath = this.plugin.app.vault.adapter.getFullPath(linkFile.path);
+                                        lm.mimeType = ImageUtil.getImageContentType(linkFile.extension);
+                                        if (imageService) {
+                                            const serviceHandleResult = await imageService.handle(lm);
+                                            serviceHandleResult.errorMessages.forEach(msg => this.conversionState.addErrorMessages(msg));
+                                            const replacedText = serviceHandleResult.replacedText;
+                                            if (replacedText) {
+                                                lm.replacedText = replacedText;
+                                                text = text.replace(lm.matchedText, replacedText);
+                                                continue;
+                                            }
+                                        }
+                                    } else { // may be Excalidraw file -> convert to svg
+                                        if (this.isExcalidraw(linkFile)) {
+                                            const svgElement = await this.exportExcalidraw(linkFile);
+                                            if (svgElement) {
+                                                svgElement.removeAttribute('width');
+                                                svgElement.removeAttribute('height');
+                                                const svgContainerEl = createDiv('excalidraw-svg');
+                                                if (lm.width && 0 < lm.width) {
+                                                    svgContainerEl.style.maxWidth = lm.width + '';
+                                                }
+                                                if (lm.height && 0 < lm.height) {
+                                                    svgContainerEl.style.maxHeight = lm.height + '';
+                                                }
+                                                svgContainerEl.appendChild(svgElement);
+                                                lm.replacedText = svgContainerEl.outerHTML
+                                                    .replace(/\s*(>)\s*(<)\s*/g, '$1$2')
+                                                    .replace(/\s{2,}/g, ' ')
+                                                    .trim();
+                                                text = text.replace(lm.matchedText, lm.replacedText);
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    this.conversionState.addErrorMessages('Found no link file: ' + lm.matchedText);
+                                }
+                                break;
+                            }
+                            default:
+                                continue;
                         }
+                        lm.status = LinkMatchStatus.Unmatched;
                     }
                 }
                 parsedText += text;
@@ -258,65 +299,109 @@ export class Convertor {
         return { lineText, handledMode: null };
     }
 
-    private handleWikilinkMatch(lineText: string, imageMatches: ImageMatch[]): void {
-        const matchFormat = ImageMatchFormat.Wikilink;
+    /**
+     * Parse Wikilink format: `![[]]`, `[[]]`
+     * - Link to a file: `[[Hexo A]]`
+     * - Link to a heading in a note:
+     *   - Linking to a heading within the same note: `[[#Test Heading]]`
+     *   - Linking to a heading in another note: `[[Hexo A#Overview]]`
+     *   - Linking to subheadings `[[Hexo A#Overview#Heading Last|Change Display Text]]`
+     * - Embed files:
+     *   - Embed an image in a note: `![[image.png|alt1|alt2|30x50]]`
+     */
+    private handleWikilinkMatch(lineText: string, linkMatches: LinkMatch[]): void {
+        const matchFormat = LinkMatchFormat.Wikilink;
         let match: RegExpExecArray | null;
-        let src = '';
-        let alt = '';
+        let linkType: LinkType;
+        let src: string;
+        let alt: string;
+        let status: LinkMatchStatus;
         let width: number | undefined = undefined;
         let height: number | undefined = undefined;
-        // Obsidian embed a local image `![[image.png|alt1|alt2|30x50]]` -> Image Service
-        while ((match = Convertor.WIKILINK_EMBED_REGEX.exec(lineText)) !== null) {
-            const [matchedText, linkText] = match;
+        while ((match = Convertor.WIKILINK_REGEX.exec(lineText)) !== null) {
+            const [matchedText, exclamationMark, linkText] = match;
+            const isEmbed = '!' === exclamationMark;
+            src = '';
+            alt = '';
             const linkTextArr = linkText?.split('|');
             if (!linkTextArr || 1 > linkTextArr.length || !(src = linkTextArr[0]?.trim())) {
+                linkType = LinkType.Exception;
+                status = LinkMatchStatus.Invalid;
+                linkMatches.push({ matchedText, matchFormat, linkType, src, alt, status }); // LinkMatchStatus.Invalid
                 continue;
             }
+            if (isEmbed) {
+                linkType = LinkType.EmbedFile;
+            } else {
+                if (src.startsWith('#')) { // Linking to a heading within the same note: `[[#Test Heading|Display Text]]`
+                    linkType = LinkType.LinkingInternalHeading;
+                    if (!(src = src.substring(1)?.trimStart())) {
+                        status = LinkMatchStatus.Invalid;
+                        linkMatches.push({ matchedText, matchFormat, linkType, src, alt, status }); // LinkMatchStatus.Invalid
+                        continue;
+                    }
+                } else {
+                    linkType = LinkType.LinkFile;
+                }
+            }
+            status = LinkMatchStatus.Valid;
             if (1 < linkTextArr.length) {
-                // parse image size:
-                const linkTextTail = linkTextArr[linkTextArr.length - 1]?.trim();
-                if (linkTextTail) {
-                    if (Convertor.IMAGE_WIDTH_REGEX.test(linkTextTail)) { // width
-                        width = Number(linkTextTail);
-                    } else {
-                        const imageSizeMatch = linkTextTail.match(Convertor.IMAGE_SIZE_REGEX);
-                        if (imageSizeMatch) { // <width>x<height>
-                            width = Number(imageSizeMatch[1]);
-                            height = Number(imageSizeMatch[2]);
+                if (LinkType.EmbedFile === linkType) {
+                    // parse image/Excalidraw size:
+                    const linkTextTail = linkTextArr[linkTextArr.length - 1]?.trim();
+                    if (linkTextTail) {
+                        if (Convertor.IMAGE_WIDTH_REGEX.test(linkTextTail)) { // <width>
+                            width = Number(linkTextTail);
+                        } else {
+                            const imageSizeMatch = linkTextTail.match(Convertor.IMAGE_SIZE_REGEX); // <width>x<height>
+                            if (imageSizeMatch) {
+                                width = Number(imageSizeMatch[1]);
+                                height = Number(imageSizeMatch[2]);
+                            }
                         }
                     }
+                    // parse image alt:
+                    alt = linkTextArr.slice(1, undefined === width ? linkTextArr.length : linkTextArr.length - 1).join('|').trimStart();
+                } else {
+                    alt = linkTextArr.slice(1).join('').trimStart();
                 }
-                // parse image alt:
-                alt = linkTextArr.slice(1, undefined === width ? linkTextArr.length : linkTextArr.length - 1).join('|').trimStart();
             }
-            if (undefined === width) width = 0;
-            if (undefined === height) height = 0;
-            imageMatches.push({ matchedText, matchFormat, src, alt, width, height });
+            linkMatches.push({ matchedText, matchFormat, linkType, src, alt, status, width, height }); // LinkMatchStatus.Valid
         }
     }
 
     // ![]()
     // e.g. ![image alt](image.png), ![image alt|30](image.png)
-    private handleMarkdownMatch(lineText: string, imageMatches: ImageMatch[]): void {
-        const matchFormat = ImageMatchFormat.Markdown;
+    private handleMarkdownMatch(lineText: string, linkMatches: LinkMatch[]): void {
+        const matchFormat = LinkMatchFormat.Markdown;
         let match: RegExpExecArray | null;
-        let src = '';
-        let alt = '';
+        let linkType: LinkType;
+        let src: string;
+        let alt: string;
+        let status: LinkMatchStatus;
         let width: number | undefined = undefined;
         let height: number | undefined = undefined;
+        // const isEmbed = true;
         // Markdown embed a local image `![alt1|alt2|30x50](image.png)` -> Image Service
         while ((match = Convertor.MARKDOWN_EMBED_REGEX.exec(lineText)) !== null) {
             const [matchedText, altText, linkText] = match;
+            src = '';
+            alt = '';
             const srcIdx = linkText.indexOf('|')
             src = 0 < srcIdx ? linkText.substring(0, srcIdx) : linkText;
             if (!src) {
+                linkType = LinkType.Exception;
+                status = LinkMatchStatus.Invalid;
+                linkMatches.push({ matchedText, matchFormat, linkType, src, alt, status }); // LinkMatchStatus.Invalid
                 continue;
             }
+            status = LinkMatchStatus.Valid;
+            linkType = LinkType.EmbedFile;
             if (altText) {
                 const altIdx = altText.lastIndexOf('|');
                 const altTextTail = (0 > altIdx ? altText : altText.substring(altIdx + 1)).trim();
                 if (altTextTail) {
-                    if (Convertor.IMAGE_WIDTH_REGEX.test(altTextTail)) { // width
+                    if (Convertor.IMAGE_WIDTH_REGEX.test(altTextTail)) { // <width>
                         width = Number(altTextTail);
                     } else {
                         const imageSizeMatch = altTextTail.match(Convertor.IMAGE_SIZE_REGEX);
@@ -328,9 +413,7 @@ export class Convertor {
                 }
                 alt = (undefined === width ? altText : altText.substring(0, altIdx)).trimStart();
             }
-            if (undefined === width) width = 0;
-            if (undefined === height) height = 0;
-            imageMatches.push({ matchedText, matchFormat, src, alt, width, height });
+            linkMatches.push({ matchedText, matchFormat, linkType, src, alt, status, width, height });
         }
     }
 
@@ -387,20 +470,36 @@ interface TextState {
     text: string
 }
 
-export interface ImageMatch {
+export interface LinkMatch {
     matchedText: string,
-    matchFormat: ImageMatchFormat,
+    matchFormat: LinkMatchFormat,
+    linkType: LinkType,
     src: string,
     alt: string,
-    width: number,
-    height: number,
-    file?: TFile,
+    status: LinkMatchStatus,
+    width?: number | undefined, // image width
+    height?: number | undefined, // image height
+    file?: TFile, // the corresponding file for `src`
     mimeType?: string,
-    fullPath?: string,
+    fullPath?: string, // absolute file full path
     replacedText?: string
 }
 
-export enum ImageMatchFormat {
+export enum LinkMatchFormat {
     Wikilink,
     Markdown
+}
+
+export enum LinkType {
+    Exception,
+    LinkingInternalHeading, // `[[#Heading One]]`
+    LinkFile, // `[[file name]]`
+    EmbedFile, // `![[file name]]`. It may be an image, Excalidraw file,  or other file ...
+    EmbedImage,
+}
+
+export enum LinkMatchStatus {
+    Invalid,
+    Valid,
+    Unmatched
 }

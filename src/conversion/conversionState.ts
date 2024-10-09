@@ -1,12 +1,12 @@
 import { App, Notice, TFile } from "obsidian";
 import { StatusBar } from "src/ui/statusBar/statusBar";
-import { ImageMatch } from "./convertor";
+import { LinkMatch } from "./convertor";
 import { ImageUtil } from "src/util/imageUil";
 
 export class ConversionState {
     private status: PluginStatus = PluginStatus.Init;
     private file: TFile | null = null; // converted file
-    private imageMatches: ImageMatch[] = [];
+    private linkMatches: LinkMatch[] = [];
     private startTime = 0;
     private endTime = 0;
     private errorMessages: string[] = [];
@@ -62,25 +62,25 @@ export class ConversionState {
         return this.file ? this.file.path : '';
     }
 
-    public addImageMatch(imageMatch: ImageMatch) {
-        if (!this.imageMatches) {
-            this.imageMatches = [];
+    public addLinkMatch(linkMatch: LinkMatch) {
+        if (!this.linkMatches) {
+            this.linkMatches = [];
         }
-        this.imageMatches.push(imageMatch);
+        this.linkMatches.push(linkMatch);
     }
 
-    public getImageMatches(): ImageMatch[] {
-        return this.imageMatches;
+    public getLinkMatches(): LinkMatch[] {
+        return this.linkMatches;
     }
 
     public getImageMatchesUlElement(app: App): HTMLUListElement {
         const ul = createEl('ul');
-        if (!this.imageMatches) {
+        if (!this.linkMatches) {
             return ul;
         }
         let replacedText: string;
         let isConversionFailed: boolean;
-        for (const im of this.imageMatches) {
+        for (const im of this.linkMatches) {
             isConversionFailed = false;
             const li = createEl('li');
             if (im.file && im.fullPath) {
@@ -109,8 +109,8 @@ export class ConversionState {
     }
 
     public isImageMatchesError(): boolean {
-        if (this.imageMatches && 0 < this.imageMatches.length) {
-            return this.imageMatches.some(im => !im.replacedText);
+        if (this.linkMatches && 0 < this.linkMatches.length) {
+            return this.linkMatches.some(im => !im.replacedText);
         }
         return true;
     }
@@ -170,7 +170,7 @@ export class ConversionState {
         this.status = PluginStatus.Ready;
         this.statusBar.display(this.status);
         this.file = null;
-        this.imageMatches = [];
+        this.linkMatches = [];
         this.startTime = 0;
         this.endTime = 0;
         this.convertedContent = '';
@@ -180,7 +180,7 @@ export class ConversionState {
         this.status = PluginStatus.Converting;
         this.statusBar.display(this.status);
         this.file = file;
-        this.imageMatches = [];
+        this.linkMatches = [];
         this.startTime = Date.now();
         this.endTime = 0;
         this.errorMessages = [];

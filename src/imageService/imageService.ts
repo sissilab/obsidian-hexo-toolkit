@@ -1,7 +1,7 @@
 import { requestUrl, TFile } from "obsidian";
 import HexoPlugin from "src/main";
 import { ImageServiceConfig, ImageServiceTypeEnum } from "./imageModel";
-import { ImageMatch, ImageMatchFormat } from "src/conversion/convertor";
+import { LinkMatch, LinkMatchFormat } from "src/conversion/convertor";
 
 export class ImageServiceFactory {
 
@@ -42,7 +42,7 @@ export abstract class ImageBaseService {
         protected readonly serviceConfig: ImageServiceConfig) {
     }
 
-    public abstract handle(imageMatch: ImageMatch): Promise<ImageServiceHandleResult>;
+    public abstract handle(imageMatch: LinkMatch): Promise<ImageServiceHandleResult>;
 
     public getServiceConfigFullName(): string {
         if (!this.serviceConfig) {
@@ -51,7 +51,7 @@ export abstract class ImageBaseService {
         return `${this.serviceConfig.name} (${this.serviceConfig.type})`;
     }
 
-    protected combineImageHtml(url: string | null, imageMatch: ImageMatch): string | null {
+    protected combineImageHtml(url: string | null, imageMatch: LinkMatch): string | null {
         if (!url) {
             return null;
         }
@@ -76,13 +76,13 @@ export class LocalImageService extends ImageBaseService {
         super(plugin, serviceConfig);
     }
 
-    public async handle(imageMatch: ImageMatch): Promise<ImageServiceHandleResult> {
+    public async handle(imageMatch: LinkMatch): Promise<ImageServiceHandleResult> {
         const imageFile = imageMatch.file;
         if (!imageFile) {
             return { replacedText: imageMatch.matchedText, errorMessages: ['Wrong image file for ' + imageMatch.matchedText] };
         }
         const filename = imageFile.name
-        if (ImageMatchFormat.Wikilink !== imageMatch.matchFormat && ImageMatchFormat.Markdown !== imageMatch.matchFormat) {
+        if (LinkMatchFormat.Wikilink !== imageMatch.matchFormat && LinkMatchFormat.Markdown !== imageMatch.matchFormat) {
             imageMatch.replacedText = imageMatch.matchedText;
             return { replacedText: null, errorMessages: this.errorMessages };
         }
@@ -99,7 +99,7 @@ export class Smms extends ImageBaseService {
         super(plugin, serviceConfig);
     }
 
-    public async handle(imageMatch: ImageMatch): Promise<ImageServiceHandleResult> {
+    public async handle(imageMatch: LinkMatch): Promise<ImageServiceHandleResult> {
         const imageFile = imageMatch.file;
         if (!imageFile) {
             return { replacedText: imageMatch.matchedText, errorMessages: ['Wrong image file for ' + imageMatch.matchedText] };
