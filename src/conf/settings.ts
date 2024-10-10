@@ -2,14 +2,17 @@ import { PluginSettingTab, App, Setting } from "obsidian";
 import { ImageServiceTypeEnum, ImageServiceConfig } from "src/imageService/imageModel";
 import HexoPlugin from "src/main";
 import { t } from "src/lang/helper";
+import { HexoRendererType } from "src/conversion/hexoRendererTransformer";
 
 export interface HexoPluginSettings {
     hexoFrontMatterProperties: string;
+    hexoRendererType: HexoRendererType;
     imageServiceConfigs: ImageServiceConfig[];
 }
 
 export const DEFAULT_SETTINGS: HexoPluginSettings = {
     hexoFrontMatterProperties: 'title,date,updated,tags,categories',
+    hexoRendererType: HexoRendererType.HexoRendererMarked,
     imageServiceConfigs: [{ type: ImageServiceTypeEnum.Local, name: '' }],
 }
 
@@ -41,6 +44,21 @@ export class HexoPluginSettingTab extends PluginSettingTab {
                     this.plugin.settings.hexoFrontMatterProperties = value;
                     await this.plugin.saveSettings();
                 }));
+
+        new Setting(containerEl)
+            .setName('Hexo Renderer Type')
+            .setDesc('This can be found in `package.json` of your Hexo project. Using different hexo renderer type may influence your rendered posts. e.g. heading id/href')
+            .addDropdown(dropdown => {
+                for (const key in HexoRendererType) {
+                    // @ts-ignore
+                    dropdown.addOption(key, t(key));
+                }
+                dropdown.setValue(this.plugin.settings.hexoRendererType);
+                dropdown.onChange(async (value) => {
+                    this.plugin.settings.hexoRendererType = value as HexoRendererType;
+                    await this.plugin.saveSettings();
+                });
+            });
 
         new Setting(containerEl)
             .setName('Image Hosting Services')

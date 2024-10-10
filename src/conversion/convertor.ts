@@ -4,6 +4,7 @@ import HexoPlugin from "src/main";
 import { ConversionState } from "./conversionState";
 import { ConversionStateModal } from "src/ui/modal/conversionStateModal";
 import { ImageUtil } from "src/util/imageUil";
+import { HexoRendererTransformer } from "./hexoRendererTransformer";
 
 export class Convertor {
 
@@ -145,7 +146,8 @@ export class Convertor {
                             case LinkType.LinkingInternalHeading: {
                                 if (lm.src) {
                                     // Obsidian link to a heading within the same note `[[#1. xxx]]` -> Hexo `[1. xxx](#1-xxx)`
-                                    lm.replacedText = `[${lm.alt}](#${lm.src.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-$/, '')})`;
+                                    const transformedHeading = HexoRendererTransformer.transformHeading(lm.src, this.plugin.settings.hexoRendererType);
+                                    lm.replacedText = `[${lm.alt}](#${transformedHeading})`;
                                     text = text.replace(lm.matchedText, lm.replacedText);
                                 }
                                 continue;
