@@ -3,7 +3,7 @@
 	"name": "Hexo Toolkit",
 	"version": "1.0.1",
 	"minAppVersion": "0.15.0",
-	"description": "A Hexo toolkit for maintaining Hexo posts.",
+	"description": "Maintain Hexo posts.",
 	"author": "Xiangru",
 	"authorUrl": "https://github.com/sissilab",
 	"isDesktopOnly": true

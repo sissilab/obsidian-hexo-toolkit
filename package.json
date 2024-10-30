@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-hexo-toolkit",
 	"version": "1.0.1",
-	"description": "A Hexo toolkit for maintaining Hexo posts.",
+	"description": "An Obsidian plugin for maintaining Hexo posts.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
