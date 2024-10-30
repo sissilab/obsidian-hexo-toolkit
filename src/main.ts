@@ -39,7 +39,7 @@ export default class HexoPlugin extends Plugin {
 	private addCommands() {
 		this.addCommand({
 			id: 'hexo-converter',
-			name: 'Hexo Converter (Obsidian -> Hexo)',
+			name: 'Convert',
 			checkCallback: (checking: boolean) => {
 				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 				if (view && 'markdown' == view.getViewType()) {
@@ -50,6 +50,12 @@ export default class HexoPlugin extends Plugin {
 				}
 				return false;
 			}
+		});
+
+		this.addCommand({
+			id: 'hexo-conversion-result',
+			name: 'Open last conversion result',
+			callback: () => this.convertor.openConversionResultByCommand()
 		});
 	}
 
