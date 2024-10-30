@@ -1,4 +1,5 @@
 import { Notice, Platform } from "obsidian";
+import { exec } from 'child_process';
 
 export class ImageUtil {
 
@@ -24,8 +25,6 @@ export class ImageUtil {
     }
 
     public static copyFileBySystemCommand(filePath: string, fileName: string, mimeType?: string) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { exec } = require('child_process');
         let command = '';
         let errorNotice = 'Failed to copy file using system command!';
         if (Platform.isWin) { // Windows: process.platform === 'win32'
