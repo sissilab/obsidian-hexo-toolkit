@@ -1,8 +1,8 @@
 {
 	"id": "hexo-toolkit",
 	"name": "Hexo Toolkit",
-	"version": "1.0.1",
-	"minAppVersion": "0.15.0",
+	"version": "1.0.2",
+	"minAppVersion": "1.0.0",
 	"description": "Maintain Hexo posts.",
 	"author": "Xiangru",
 	"authorUrl": "https://github.com/sissilab",
