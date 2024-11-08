@@ -31,12 +31,10 @@ export class HexoPluginSettingTab extends PluginSettingTab {
 
 		containerEl.addClass('hexo-toolkit-setting');
 
-		containerEl.createEl('h2', { text: 'Hexo Toolkit v' + this.plugin.manifest.version });
-
 		new Setting(containerEl)
 			.setClass('hexo-front-matter')
-			.setName('Hexo Front-matter')
-			.setDesc('When converting to Hexo-compatible markdown, only keep the property names configured here, separated by commas, such as `title,date,updated,tags,categories`.')
+			.setName(t('HexoFrontMatterName'))
+			.setDesc(t('HexoFrontMatterDesc'))
 			.addText(text => text
 				.setPlaceholder('Enter Hexo Front-matter properties')
 				.setValue(this.plugin.settings.hexoFrontMatterProperties)
@@ -46,8 +44,8 @@ export class HexoPluginSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Hexo Renderer Type')
-			.setDesc('This can be found in `package.json` of your Hexo project. Using different hexo renderer type may influence your rendered posts. e.g. heading id/href')
+			.setName(t('HexoRendererTypeName'))
+			.setDesc(t('HexoRendererTypeDesc'))
 			.addDropdown(dropdown => {
 				for (const key in HexoRendererType) {
 					// @ts-ignore
@@ -61,11 +59,11 @@ export class HexoPluginSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Image Hosting Services')
-			.setDesc('Setting image hosting services to upload images.')
+			.setName(t('ImageHostingServicesName'))
+			.setDesc(t('ImageHostingServicesDesc'))
 			.addButton(btn => {
 				btn.setIcon('plus')
-					.setTooltip('Add an image hosting service')
+					.setTooltip(t('ImageHostingServicesAddBtnTip'))
 					.setCta()
 					.onClick(() => {
 						this.plugin.settings.imageServiceConfigs.push({
@@ -134,7 +132,7 @@ export class HexoPluginSettingTab extends PluginSettingTab {
 		const serviceDetailsEl = details.createDiv('service-details');
 
 		new Setting(serviceDetailsEl)
-			.setName('Type')
+			.setName(t('ImageServiceType'))
 			.addDropdown(dropdown => {
 				for (const key in ImageServiceTypeEnum) {
 					// @ts-ignore
@@ -149,7 +147,7 @@ export class HexoPluginSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(serviceDetailsEl)
-			.setName('Name')
+			.setName(t('ImageServiceName'))
 			.addText(text => text
 				.setPlaceholder('Enter name')
 				.setValue(service.name)
@@ -178,9 +176,9 @@ export class HexoPluginSettingTab extends PluginSettingTab {
 
 	addApiKey(serviceDetailsEl: HTMLDivElement, service: ImageServiceConfig) {
 		new Setting(serviceDetailsEl)
-			.setName('API Key')
+			.setName(t('ImageServiceApiKey'))
 			.addText(text => text
-				.setPlaceholder('Enter API key')
+				.setPlaceholder(t('ImageServiceApiKeyPlaceholder'))
 				.setValue(service.apiKey || '')
 				.onChange(async (value) => {
 					service.apiKey = value;
@@ -190,9 +188,9 @@ export class HexoPluginSettingTab extends PluginSettingTab {
 
 	addFilePath(serviceDetailsEl: HTMLDivElement, service: ImageServiceConfig) {
 		new Setting(serviceDetailsEl)
-			.setName('File Path')
+			.setName(t('ImageServiceFilePath'))
 			.addText(text => text
-				.setPlaceholder('Enter file path')
+				.setPlaceholder(t('ImageServiceFilePathPlaceholder'))
 				.setValue(service.filePath || '')
 				.onChange(async (value) => {
 					service.filePath = value;
