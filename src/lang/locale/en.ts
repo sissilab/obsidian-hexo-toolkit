@@ -10,13 +10,13 @@ export default {
     HexoRendererMarkdownItPlus: 'hexo-renderer-markdown-it-plus',
 
 	// ConversionStateModal
-	FileName: 'File Name',
-	FilePath: 'File Path',
-	ImageService: 'Image Service',
+	FileName: 'File name',
+	FilePath: 'File path',
+	ImageService: 'Image service',
 	Status: 'Status',
-	RunTime: 'Run Time',
-	ErrorMessages: 'Error Messages',
-	ImageMatches: 'Image Matches',
-	ConvertedContent: 'Converted Content',
+	RunTime: 'Run time',
+	ErrorMessages: 'Error messages',
+	ImageMatches: 'Image matches',
+	ConvertedContent: 'Converted content',
 
 }
