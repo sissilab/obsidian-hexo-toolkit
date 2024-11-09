@@ -36,7 +36,7 @@ export class HexoPluginSettingTab extends PluginSettingTab {
 			.setName(t('HexoFrontMatterName'))
 			.setDesc(t('HexoFrontMatterDesc'))
 			.addText(text => text
-				.setPlaceholder('Enter Hexo Front-matter properties')
+				.setPlaceholder(t('HexoFrontMatterPlaceholder'))
 				.setValue(this.plugin.settings.hexoFrontMatterProperties)
 				.onChange(async (value) => {
 					this.plugin.settings.hexoFrontMatterProperties = value;

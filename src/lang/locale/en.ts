@@ -22,6 +22,7 @@ export default {
 	// Settings:
 	HexoFrontMatterName: 'Hexo front-matter',
 	HexoFrontMatterDesc: 'When converting to Hexo-compatible markdown, only keep the property names configured here, separated by commas, such as `title,date,updated,tags,categories`.',
+	HexoFrontMatterPlaceholder: 'Enter Hexo front-matter properties',
 	HexoRendererTypeName: 'Hexo renderer type',
 	HexoRendererTypeDesc: 'This can be found in `package.json` of your Hexo project. Using different hexo renderer type may influence your rendered posts. e.g. heading id/href',
 	ImageHostingServicesName: 'Image hosting services',
