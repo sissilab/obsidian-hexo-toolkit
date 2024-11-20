@@ -113,7 +113,7 @@ export class ConversionState {
 		if (this.linkMatches && 0 < this.linkMatches.length) {
 			return this.linkMatches.some(im => !im.replacedText);
 		}
-		return true;
+		return false;
 	}
 
 	public addErrorMessages(msg: string, isNotice?: boolean, duration?: number) {
