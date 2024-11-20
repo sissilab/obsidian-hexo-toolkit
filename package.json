@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-hexo-toolkit",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "An Obsidian plugin for maintaining Hexo posts.",
 	"main": "main.js",
 	"scripts": {
